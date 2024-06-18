@@ -250,28 +250,35 @@ void ChumPackage::clearInstalled() {
 void ChumPackage::setPkidInstalled(const QString &pkid) {
     if (m_pkid_installed == pkid) return;
     m_pkid_installed = pkid;
+    qDebug() << m_package_name << "has pkid" << pkid;
     setInstalledVersion(Daemon::packageVersion(pkid));
 }
 
 void ChumPackage::setInstalledVersion(const QString &v)
 {
     if (v == m_installed_version) return;
+    qDebug() << m_package_name << "has version" << v;
     m_installed_version = v;
     emit updated(m_id, PackageInstalledVersionRole);
     emit updated(m_id, PackageInstalledRole);
+    qDebug() << m_package_name << "is of type" << type();
     if (type() == PackageApplicationDesktop && installed()) {
+        qDebug() << "Querying files for application package" << m_package_name;
         auto trfl = Daemon::getFiles(m_pkid_installed);
         connect(trfl, &Transaction::files, this, [this](
                 const QString &packageID, const QStringList &filenames)
         {
             for (auto f : filenames) {
+                qDebug() << "Package" << m_package_name << "has file" << f;
                 if (f.endsWith(QStringLiteral(".desktop")))
                 {
+                    qDebug() << "Found desktop file" << f;
                     m_desktopFile = f;
                     emit updated(m_id, PackageDesktopFileRole);
-                    break;
+                    return;//break;
                 }
             }
+            qDebug() << "No desktop file found for package" << m_package_name;
         });
     }
 }
